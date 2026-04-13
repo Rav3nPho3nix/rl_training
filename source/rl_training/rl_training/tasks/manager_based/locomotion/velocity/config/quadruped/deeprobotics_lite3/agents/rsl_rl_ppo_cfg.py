@@ -48,10 +48,10 @@ class DeeproboticsLite3FlatPPORunnerCfg(DeeproboticsLite3RoughPPORunnerCfg):
 
 
 @configclass
-class DeeproboticsLite3LongJumpPPORunnerCft(DeeproboticsLite3RoughPPORunnerCfg):
+class CustomLite3LongJumpPPORunnerCft(DeeproboticsLite3RoughPPORunnerCfg):
     def __post_init__(self):
         super().__post_init__()
         
-        self.experiment_name = "deeprobotics_lite3_long_jump"
+        self.experiment_name = "custom_lite3_long_jump"
         self.algorithm.gamma = 0.96
         self.algorithm.entropy_coef = 0.03
