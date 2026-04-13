@@ -38,7 +38,6 @@ class DeeproboticsLite3RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         max_grad_norm=1.0,
     )
 
-
 @configclass
 class DeeproboticsLite3FlatPPORunnerCfg(DeeproboticsLite3RoughPPORunnerCfg):
     def __post_init__(self):
@@ -46,3 +45,13 @@ class DeeproboticsLite3FlatPPORunnerCfg(DeeproboticsLite3RoughPPORunnerCfg):
 
         self.max_iterations = 10000
         self.experiment_name = "deeprobotics_lite3_flat"
+
+
+@configclass
+class DeeproboticsLite3LongJumpPPORunnerCft(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        
+        self.experiment_name = "deeprobotics_lite3_long_jump"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
