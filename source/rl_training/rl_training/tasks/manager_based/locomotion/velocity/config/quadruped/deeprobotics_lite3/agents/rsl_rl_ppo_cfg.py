@@ -3,6 +3,13 @@
 
 from isaaclab.utils import configclass
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlMLPModelCfg, RslRlPpoAlgorithmCfg
+from dataclasses import MISSING
+
+@configclass
+class DistributionCfg:
+    class_name : str = MISSING
+    state_dependent_std : bool = False
+    std : float = 1.0
 
 
 @configclass
@@ -23,20 +30,18 @@ class DeeproboticsLite3RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         class_name="MLPModel",
         hidden_dims=[512, 256, 128],
         activation="elu",
-        stochastic=True,
-        init_noise_std=1.0,
-        noise_std_type="log",
-        state_dependant_std=False,
+        obs_normalization = False,
+        distribution_cfg = DistributionCfg(class_name="NormalDistribution"),
     )
+
     critic = RslRlMLPModelCfg(
         class_name="MLPModel",
         hidden_dims=[512, 256, 128],
         activation="elu",
-        stochastic=False,
-        init_noise_std=1.0,
-        noise_std_type="scalar",
-        state_dependant_std=False,
+        obs_normalization = False,
+        distribution_cfg = None,
     )
+
     algorithm = RslRlPpoAlgorithmCfg(
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
