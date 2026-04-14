@@ -1,11 +1,8 @@
-# Copyright (c) 2025 Deep Robotics
-# SPDX-License-Identifier: BSD 3-Clause
-
-# Copyright (c) 2024-2025 Ziqi Fan
-# SPDX-License-Identifier: Apache-2.0
+# Fichier de configuration modifie
+# CAPITANO Giuliano
 
 from isaaclab.utils import configclass
-from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
+from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlMLPModelCfg, RslRlPpoAlgorithmCfg
 
 
 @configclass
@@ -16,12 +13,29 @@ class DeeproboticsLite3RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     experiment_name = "deeprobotics_lite3_rough"
     empirical_normalization = False
     clip_actions = 100
-    policy = RslRlPpoActorCriticCfg(
+
+    obs_groups = {
+        "actor": ["policy"],
+        "critic": ["critic"],
+    }
+
+    actor = RslRlMLPModelCfg(
+        class_name="MLPModel",
+        hidden_dims=[512, 256, 128],
+        activation="elu",
+        stochastic=True,
         init_noise_std=1.0,
         noise_std_type="log",
-        actor_hidden_dims=[512, 256, 128],
-        critic_hidden_dims=[512, 256, 128],
+        state_dependant_std=False,
+    )
+    critic = RslRlMLPModelCfg(
+        class_name="MLPModel",
+        hidden_dims=[512, 256, 128],
         activation="elu",
+        stochastic=False,
+        init_noise_std=1.0,
+        noise_std_type="scalar",
+        state_dependant_std=False,
     )
     algorithm = RslRlPpoAlgorithmCfg(
         value_loss_coef=1.0,
@@ -38,11 +52,11 @@ class DeeproboticsLite3RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         max_grad_norm=1.0,
     )
 
+
 @configclass
 class DeeproboticsLite3FlatPPORunnerCfg(DeeproboticsLite3RoughPPORunnerCfg):
     def __post_init__(self):
         super().__post_init__()
-
         self.max_iterations = 10000
         self.experiment_name = "deeprobotics_lite3_flat"
 
