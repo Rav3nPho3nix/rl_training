@@ -3,13 +3,14 @@
 
 from isaaclab.utils import configclass
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlMLPModelCfg, RslRlPpoAlgorithmCfg
-from dataclasses import MISSING
 
+'''
 @configclass
 class DistributionCfg:
-    class_name : str = MISSING
-    state_dependent_std : bool = False
-    std : float = 1.0
+    class_name : str = "GaussianDistribution"
+    # state_dependent_std : bool = False
+    # std : float = 1.0
+'''
 
 
 @configclass
@@ -31,7 +32,10 @@ class DeeproboticsLite3RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         hidden_dims=[512, 256, 128],
         activation="elu",
         obs_normalization = False,
-        distribution_cfg = DistributionCfg(class_name="NormalDistribution"),
+        distribution_cfg = RslRlMLPModelCfg.GaussianDistributionCfg(
+            init_std = 1.0,
+            std_type = "scalar",
+        ),
     )
 
     critic = RslRlMLPModelCfg(

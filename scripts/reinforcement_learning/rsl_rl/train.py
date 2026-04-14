@@ -153,12 +153,6 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         print_dict(video_kwargs, nesting=4)
         env = gym.wrappers.RecordVideo(env, **video_kwargs)
 
-    '''
-    # Convertit en une version depreciee
-    VERSION = "5.0.1"
-    handle_deprecated_rsl_rl_cfg(agent_cfg, VERSION)
-
-    exit()'''
 
     # wrap around environment for rsl-rl
     env = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
@@ -166,6 +160,28 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     # create runner from rsl-rl
     # convert old-style config (with 'policy' key) to new-style (with 'actor'/'critic' keys) for rsl-rl v5+
     train_cfg = cli_args.convert_rsl_rl_cfg_dict(agent_cfg.to_dict())
+
+    """
+    print("Apres appel de la convertion :\n")
+    for key, value in train_cfg.items():
+        print(f"{key} : {value}")
+
+    exit()
+    """
+
+    # Suppression des champs obosoletes qui sont toujours utilises => Cause un crash
+    # On supprime dans 'actor' et 'critic' : 'stochastic', 'init_noise_std'm 'noise_std_type' et 'state_dependent_std'
+    for key in ["actor", "critic"]:
+        if key in train_cfg:
+            for key2 in ["stochastic", "init_noise_std", "noise_std_type", "state_dependent_std"]:
+                del train_cfg[key][key2]
+
+    print("Apres appel de la suppresion :\n")
+    for key, value in train_cfg.items():
+        print(f"{key} : {value}")
+
+    # exit()
+
     runner = OnPolicyRunner(env, train_cfg, log_dir=log_dir, device=agent_cfg.device)
     # write git state to logs
     runner.add_git_repo_to_log(__file__)

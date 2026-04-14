@@ -156,4 +156,17 @@ def convert_rsl_rl_cfg_dict(cfg_dict: dict) -> dict:
     if not isinstance(obs_groups, dict):
         cfg_dict["obs_groups"] = {}
 
+    """
+    # Suppression des champs obosoletes qui sont toujours utilises => Cause un crash
+    # On supprime dans 'actor' et 'critic'
+    for key in ["actor", "critic"]:
+        # Si le dictionnaire contient une des valeurs ET la valeur associee est un dictionnaire elle meme
+        if key in cfg_dict and isinstance(cfg_dict[key], dict):
+            # On supprime les valeurs obsoletes
+            cfg_dict[key].pop("stochastic", None)
+            cfg_dict[key].pop("init_noise_std", None)
+            cfg_dict[key].pop("noise_std_type", None)
+            cfg_dict[key].pop("state_dependent_std", None)
+    """
+
     return cfg_dict
