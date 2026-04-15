@@ -172,6 +172,19 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     # load previously trained model
     # convert old-style config (with 'policy' key) to new-style (with 'actor'/'critic' keys) for rsl-rl v5+
     train_cfg = cli_args.convert_rsl_rl_cfg_dict(agent_cfg.to_dict())
+
+    # Suppression des champs obosoletes qui sont toujours utilises => Cause un crash
+    # On supprime dans 'actor' et 'critic' : 'stochastic', 'init_noise_std'm 'noise_std_type' et 'state_dependent_std'
+    for key in ["actor", "critic"]:
+        if key in train_cfg:
+            for key2 in ["stochastic", "init_noise_std", "noise_std_type", "state_dependent_std"]:
+                del train_cfg[key][key2]
+
+    print("Apres appel de la suppresion :\n")
+    for key, value in train_cfg.items():
+        print(f"{key} : {value}")
+
+
     ppo_runner = OnPolicyRunner(env, train_cfg, log_dir=None, device=agent_cfg.device)
     ppo_runner.load(resume_path)
 
