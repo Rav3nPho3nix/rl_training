@@ -32,7 +32,7 @@ Everyone is welcome to contribute to this repo. If you discover a bug or optimiz
 - Clone this repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
 
   ```bash
-  git clone --recurse-submodules https://github.com/DeepRoboticsLab/rl_training.git
+  git clone --recurse-submodules https://github.com/Rav3nPho3nix/rl_training.git
   ```
 
 - Using a python interpreter that has Isaac Lab installed, install the library
