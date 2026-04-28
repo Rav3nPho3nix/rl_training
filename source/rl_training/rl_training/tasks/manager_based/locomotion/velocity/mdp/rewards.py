@@ -783,3 +783,155 @@ def lin_vel_xy_l2_with_ang_z_command(
     # reward *= torch.sum(torch.square(env.command_manager.get_command(command_name)[:, 2:]), dim=1) > command_threshold
     # reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
+
+
+# Ajoute par Giuliano Capitano
+
+def jump_forward_reward(
+    env: ManagerBasedRLEnv,
+    sensor_cfg: SceneEntityCfg,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """
+    Récompense structurée en 3 phases détectées automatiquement :
+    - Phase élan    : pattes au sol, récompense vitesse X
+    - Phase vol     : toutes pattes en l'air, récompense hauteur + distance
+    - Phase stable  : pattes au sol après vol, robot stable
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+
+    feet_forces = contact_sensor.data.net_forces_w_history[:, 0, sensor_cfg.body_ids, 2]
+    n_contact = (feet_forces > 1.0).sum(dim=-1).float()
+    all_grounded = n_contact == 4
+    all_airborne = n_contact == 0
+
+    lin_vel_x = asset.data.root_lin_vel_b[:, 0]
+    height = asset.data.root_pos_w[:, 2]
+    distance = torch.norm(
+        asset.data.root_pos_w[:, :2] - env.scene.env_origins[:, :2], dim=1
+    )
+    gravity_proj = torch.norm(asset.data.projected_gravity_b[:, :2], dim=1)
+    lin_vel_norm = torch.norm(asset.data.root_lin_vel_b[:, :2], dim=1)
+
+    # Phase 1 — élan : vitesse vers l'avant
+    phase_elan = all_grounded.float() * torch.clamp(lin_vel_x, min=0.0)
+
+    # Phase 2 — vol : hauteur au dessus du normal + distance
+    phase_vol = all_airborne.float() * (
+        torch.clamp(height - 0.35, min=0.0) * 5.0
+        + distance * 2.0
+    )
+
+    # Phase 3 — stabilisation : au sol, lent, droit, loin de l'origine
+    is_stable = (gravity_proj < 0.15) & (lin_vel_norm < 0.5)
+    phase_stable = all_grounded.float() * is_stable.float() * distance
+
+    return phase_elan + phase_vol + phase_stable
+
+
+def forward_distance_reward(
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Récompense uniquement le déplacement sur l'axe X depuis l'origine."""
+    asset: RigidObject = env.scene[asset_cfg.name]
+    distance_x = asset.data.root_pos_w[:, 0] - env.scene.env_origins[:, 0]
+    return torch.clamp(distance_x, min=0.0)
+
+def lin_vel_z_positive(
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Récompense uniquement la vitesse verticale positive (décollage)."""
+    asset: RigidObject = env.scene[asset_cfg.name]
+    return torch.clamp(asset.data.root_lin_vel_b[:, 2], min=0.0)
+
+def base_height_in_flight(
+    env: ManagerBasedRLEnv,
+    target_height: float,
+    sensor_cfg: SceneEntityCfg,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Récompense la hauteur UNIQUEMENT quand toutes les pattes sont en l'air."""
+    asset: RigidObject = env.scene[asset_cfg.name]
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+
+    feet_forces = contact_sensor.data.net_forces_w_history[:, 0, sensor_cfg.body_ids, 2]
+    all_airborne = (feet_forces < 1.0).all(dim=-1)
+
+    height_bonus = torch.clamp(asset.data.root_pos_w[:, 2] - target_height, min=0.0)
+    return all_airborne.float() * height_bonus
+
+
+def all_feet_airborne(
+    env: ManagerBasedRLEnv,
+    sensor_cfg: SceneEntityCfg,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    height_bonus_scale: float = 2.0,
+    duration_bonus_scale: float = 1.0,
+) -> torch.Tensor:
+    """
+    Récompense quand les 4 pattes sont en l'air.
+    - Récompense la hauteur du centre de masse au dessus d'un seuil.
+    - Récompense la durée pendant laquelle les 4 pattes sont en l'air.
+    - Pénalise si le robot est trop incliné.
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+
+    # Détection des pattes en l'air
+    feet_forces = contact_sensor.data.net_forces_w_history[:, 0, sensor_cfg.body_ids, 2]
+    all_airborne = (feet_forces < 1.0).all(dim=-1).float()
+
+    # Hauteur du centre de masse
+    height = asset.data.root_pos_w[:, 2]
+    height_bonus = torch.clamp(height - 0.5, min=0.0) * height_bonus_scale
+
+    # Durée en l'air (approximation)
+    air_time = contact_sensor.data.current_air_time[:, sensor_cfg.body_ids]
+    min_air_time = torch.min(air_time, dim=1)[0]
+    duration_bonus = torch.clamp(min_air_time - 0.2, min=0.0) * duration_bonus_scale
+
+    # Stabilité (pénaliser l'inclinaison)
+    gravity_proj = torch.norm(asset.data.projected_gravity_b[:, :2], dim=1)
+    stability_penalty = torch.clamp(gravity_proj - 0.1, min=0.0) * 5.0
+
+    # Récompense finale
+    reward = all_airborne * (height_bonus + duration_bonus) - stability_penalty
+    return reward
+
+def penalize_folded_legs(
+    env: ManagerBasedRLEnv,
+    sensor_cfg: SceneEntityCfg,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """
+    Pénalise le robot qui replie ses pattes sans vrai décollage :
+    - en l'air MAIS vitesse verticale négative ou nulle (il tombe, pas il saute)
+    - en l'air MAIS hauteur normale (il a juste replié ses pattes)
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+
+    feet_forces = contact_sensor.data.net_forces_w_history[:, 0, sensor_cfg.body_ids, 2]
+    all_airborne = (feet_forces < 1.0).all(dim=-1)
+
+    height = asset.data.root_pos_w[:, 2]
+    vz = asset.data.root_lin_vel_b[:, 2]
+
+    # Triche : en l'air sans impulsion vers le haut ET sans hauteur significative
+    is_cheating = all_airborne & (vz <= 0.0) & (height < 0.45)
+
+    return is_cheating.float()
+
+
+def penalize_backward_and_lateral(
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Pénalise le déplacement vers l'arrière et latéral."""
+    asset: RigidObject = env.scene[asset_cfg.name]
+    vx_backward = torch.clamp(-asset.data.root_lin_vel_b[:, 0], min=0.0)
+    vy_lateral = torch.abs(asset.data.root_lin_vel_b[:, 1])
+    return vx_backward + vy_lateral

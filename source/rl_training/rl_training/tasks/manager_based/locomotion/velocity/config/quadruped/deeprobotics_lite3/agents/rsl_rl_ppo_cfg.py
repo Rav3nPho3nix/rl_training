@@ -12,7 +12,6 @@ class DistributionCfg:
     # std : float = 1.0
 '''
 
-
 @configclass
 class DeeproboticsLite3RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
@@ -75,5 +74,102 @@ class CustomLite3LongJumpPPORunnerCft(DeeproboticsLite3RoughPPORunnerCfg):
     def __post_init__(self):
         super().__post_init__()
         self.experiment_name = "custom_lite3_long_jump"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_1(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v1"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_2(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v2"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_3(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v3"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_4(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v4"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_5(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v5"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_6(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v6"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_7(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v7"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_8(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v8"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_9(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v9"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_10(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v10"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_11(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v11"
+        self.algorithm.gamma = 0.96
+        self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3LongJumpPPORunnerCft_12(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_long_jump_v12"
         self.algorithm.gamma = 0.96
         self.algorithm.entropy_coef = 0.03
