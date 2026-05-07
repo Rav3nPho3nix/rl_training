@@ -173,3 +173,24 @@ class CustomLite3LongJumpPPORunnerCft_12(DeeproboticsLite3RoughPPORunnerCfg):
         self.experiment_name = "custom_lite3_long_jump_v12"
         self.algorithm.gamma = 0.96
         self.algorithm.entropy_coef = 0.03
+
+@configclass
+class CustomLite3RearBalancePPORunnerCft(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_rear_balance_v0"
+        self.max_iterations = 5000
+
+@configclass
+class CustomLite3RearBalancePPORunnerCft_1(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_rear_balance_v1"
+        self.max_iterations = 5000
+
+@configclass
+class CustomLite3RearBalancePPORunnerCft_2(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_rear_balance_v2"
+        self.max_iterations = 5000

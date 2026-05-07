@@ -926,12 +926,124 @@ def penalize_folded_legs(
     return is_cheating.float()
 
 
-def penalize_backward_and_lateral(
+def target_orientation_reward(
+    env: ManagerBasedRLEnv,
+    target_pitch: float,  # Angle cible en radians (négatif = penché vers l'arrière)
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """
+    Récompense si l'orientation du robot correspond à un angle cible (pitch vers l'arrière).
+    Utilise la projection de la gravité sur l'axe X du robot (dans son repère local).
+    Si le robot est penché vers l'arrière, projected_gravity_b[:, 0] < 0.
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    pitch_error = torch.abs(asset.data.projected_gravity_b[:, 0] - target_pitch)
+    reward = torch.exp(-pitch_error ** 2 / 0.1)  # Noeud gaussien
+    return reward
+
+def penalize_front_contacts(
+    env: ManagerBasedRLEnv,
+    sensor_cfg: SceneEntityCfg,
+    front_leg_indices: list[int],
+) -> torch.Tensor:
+    """
+    Pénalise fortement si une patte avant touche le sol.
+    """
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    contact_forces = contact_sensor.data.net_forces_w_history[:, 0, sensor_cfg.body_ids, 2]
+    front_contacts = (contact_forces[:, front_leg_indices] > 1.0).any(dim=1)
+    return front_contacts.float()  # 1.0 si contact, 0.0 sinon
+
+def rear_legs_contact_reward(
+    env: ManagerBasedRLEnv,
+    sensor_cfg: SceneEntityCfg,
+    rear_leg_indices: list[int],
+) -> torch.Tensor:
+    """
+    Récompense si les pattes arrière sont en contact avec le sol.
+    """
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    contact_forces = contact_sensor.data.net_forces_w_history[:, 0, sensor_cfg.body_ids, 2]
+    rear_contacts = (contact_forces[:, rear_leg_indices] > 1.0).all(dim=1)
+    return rear_contacts.float()  # 1.0 si les deux pattes arrière sont en contact
+
+def penalize_lateral_and_forward(
     env: ManagerBasedRLEnv,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
-    """Pénalise le déplacement vers l'arrière et latéral."""
+    """
+    Pénalise les mouvements latéraux (vy) et vers l'avant (vx > 0).
+    """
     asset: RigidObject = env.scene[asset_cfg.name]
-    vx_backward = torch.clamp(-asset.data.root_lin_vel_b[:, 0], min=0.0)
-    vy_lateral = torch.abs(asset.data.root_lin_vel_b[:, 1])
-    return vx_backward + vy_lateral
+    vx_forward = torch.clamp(asset.data.root_lin_vel_b[:, 0], min=0.0)  # Vitesse vers l'avant
+    vy_lateral = torch.abs(asset.data.root_lin_vel_b[:, 1])  # Vitesse latérale
+    return vx_forward + vy_lateral
+
+def stability_reward(
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """
+    Récompense la stabilité globale :
+    - Vitesse linéaire proche de zéro
+    - Vitesse angulaire proche de zéro
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    lin_vel_norm = torch.norm(asset.data.root_lin_vel_b[:, :2], dim=1)
+    ang_vel_norm = torch.norm(asset.data.root_ang_vel_b[:, :2], dim=1)
+    reward = torch.exp(-(lin_vel_norm + ang_vel_norm))
+    return reward
+
+def body_upright_reward(
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """
+    Récompense le robot quand son corps est dressé verticalement.
+    projected_gravity_b[:, 0] = composante X de la gravité dans le frame robot.
+    Quand le robot est dressé sur les pattes arrières, la gravité
+    pointe vers l'arrière du robot → gx est fortement négatif.
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    # gx proche de -1 = robot dressé à 90°
+    # gx proche de  0 = robot à plat
+    gx = asset.data.projected_gravity_b[:, 0]
+    return torch.clamp(-gx, min=0.0)  # récompense max quand gx = -1
+
+
+def penalize_backward_motion(
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """
+    Pénalise uniquement le mouvement vers l'arrière.
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+
+    vx = asset.data.root_lin_vel_b[:, 0]
+
+    # uniquement si vx négatif
+    return torch.clamp(-vx, min=0.0)
+
+
+def front_leg_fold_penalty(
+    env: ManagerBasedRLEnv,
+    front_knee_joint_ids: list[int],
+    threshold: float = 1.2,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """
+    Pénalise les genoux avant trop repliés.
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+
+    knee_angles = torch.abs(
+        asset.data.joint_pos[:, front_knee_joint_ids]
+    )
+
+    excess = torch.clamp(knee_angles - threshold, min=0.0)
+
+    return torch.sum(excess, dim=1)
+
+
+    

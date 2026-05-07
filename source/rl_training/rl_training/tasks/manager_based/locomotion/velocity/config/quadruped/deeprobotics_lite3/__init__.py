@@ -165,3 +165,33 @@ gym.register(
         "rsl_rl_cfg_entry_point": f"{__name__}.agents.rsl_rl_ppo_cfg:CustomLite3LongJumpPPORunnerCft_12",
     },
 )
+
+gym.register(
+    id="Custom-Lite3-Rear-Balance-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.rear_balance_env_cfg:CustomLite3RearBalanceEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{__name__}.agents.rsl_rl_ppo_cfg:CustomLite3RearBalancePPORunnerCft",
+    },
+)
+
+gym.register(
+    id="Custom-Lite3-Rear-Balance-v1",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.rear_balance_env_cfg:CustomLite3RearBalanceEnvCfg_1",
+        "rsl_rl_cfg_entry_point": f"{__name__}.agents.rsl_rl_ppo_cfg:CustomLite3RearBalancePPORunnerCft_1",
+    },
+)
+
+gym.register(
+    id="Custom-Lite3-Rear-Balance-v2",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.rear_balance_env_cfg:CustomLite3RearBalanceEnvCfg_2",
+        "rsl_rl_cfg_entry_point": f"{__name__}.agents.rsl_rl_ppo_cfg:CustomLite3RearBalancePPORunnerCft_2",
+    },
+)
