@@ -1045,5 +1045,16 @@ def front_leg_fold_penalty(
 
     return torch.sum(excess, dim=1)
 
-
-    
+def front_legs_extended(
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg,
+) -> torch.Tensor:
+    """
+    Pénalise la flexion excessive des pattes avant quand elles sont en l'air.
+    Encourage les pattes avant à rester étendues/neutres.
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+    joint_pos = asset.data.joint_pos[:, asset_cfg.joint_ids]
+    default_pos = asset.data.default_joint_pos[:, asset_cfg.joint_ids]
+    deviation = torch.sum(torch.square(joint_pos - default_pos), dim=-1)
+    return deviation

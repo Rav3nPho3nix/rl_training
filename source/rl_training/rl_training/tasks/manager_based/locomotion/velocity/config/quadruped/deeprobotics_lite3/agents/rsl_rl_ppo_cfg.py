@@ -194,3 +194,10 @@ class CustomLite3RearBalancePPORunnerCft_2(DeeproboticsLite3RoughPPORunnerCfg):
         super().__post_init__()
         self.experiment_name = "custom_lite3_rear_balance_v2"
         self.max_iterations = 5000
+
+@configclass
+class CustomLite3RearBalancePPORunnerCft_3(DeeproboticsLite3RoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "custom_lite3_rear_balance_v3"
+        self.max_iterations = 5000

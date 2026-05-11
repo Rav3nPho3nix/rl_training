@@ -195,3 +195,13 @@ gym.register(
         "rsl_rl_cfg_entry_point": f"{__name__}.agents.rsl_rl_ppo_cfg:CustomLite3RearBalancePPORunnerCft_2",
     },
 )
+
+gym.register(
+    id="Custom-Lite3-Rear-Balance-v3",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.rear_balance_env_cfg:CustomLite3RearBalanceEnvCfg_3",
+        "rsl_rl_cfg_entry_point": f"{__name__}.agents.rsl_rl_ppo_cfg:CustomLite3RearBalancePPORunnerCft_3",
+    },
+)
